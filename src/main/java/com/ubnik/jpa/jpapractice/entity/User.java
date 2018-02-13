@@ -1,4 +1,4 @@
-package com.ubnik.jpa.entity;
+package com.ubnik.jpa.jpapractice.entity;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
