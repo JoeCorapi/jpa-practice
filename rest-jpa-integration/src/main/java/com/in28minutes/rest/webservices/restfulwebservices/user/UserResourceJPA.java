@@ -22,16 +22,19 @@ public class UserResourceJPA {
 	private UserDaoService service;
 
 	@Autowired
-	private UserRepository repository;
+	private UserRepository userRepository;
+
+	@Autowired
+	private PostRepository postRepository;
 
 	@GetMapping("/jpa/users")
 	public List<User> retrieveAllUsers() {
-		return repository.findAll();
+		return userRepository.findAll();
 	}
 
 	@GetMapping("/jpa/users/{id}")
 	public Resource<User> retrieveUser(@PathVariable int id) {
-		Optional<User> user = repository.findById(id);
+		Optional<User> user = userRepository.findById(id);
 		
 		if(!user.isPresent())
 			throw new UserNotFoundException("id-"+ id);
@@ -53,7 +56,7 @@ public class UserResourceJPA {
 
 	@DeleteMapping("/jpa/users/{id}")
 	public void deleteUser(@PathVariable int id) {
-		repository.deleteById(id);
+		userRepository.deleteById(id);
 	}
 
 	//
@@ -64,7 +67,7 @@ public class UserResourceJPA {
 	
 	@PostMapping("/users")
 	public ResponseEntity<Object> createUser(@Valid @RequestBody User user) {
-		User savedUser = repository.save(user);
+		User savedUser = userRepository.save(user);
 		// CREATED
 		// /user/{id}     savedUser.getId()
 		
@@ -74,6 +77,38 @@ public class UserResourceJPA {
 			.buildAndExpand(savedUser.getId()).toUri();
 		
 		return ResponseEntity.created(location).build();
-		
+	}
+
+	@GetMapping("/jpa/users/{id}/posts")
+	public List<Post> retrieveUserPosts(@PathVariable int id) {
+		Optional<User> userOptional = userRepository.findById(id);
+
+		if(!userOptional.isPresent()) {
+			throw new UserNotFoundException("id-" + id);
+		}
+
+		return userOptional.get().getPosts();
+	}
+
+	@PostMapping("/jpa/users/{id}/posts")
+	public ResponseEntity<Object> createPost(@PathVariable int id, @RequestBody Post post) {
+		Optional<User> userOptional = userRepository.findById(id);
+
+		if(!userOptional.isPresent()) {
+			throw new UserNotFoundException("id-" + id);
+		}
+
+		User user = userOptional.get();
+
+		post.setUser(user);
+
+		postRepository.save(post);
+
+		URI location = ServletUriComponentsBuilder
+				.fromCurrentRequest()
+				.path("/{id}")
+				.buildAndExpand(post.getId()).toUri();
+
+		return ResponseEntity.created(location).build();
 	}
 }
